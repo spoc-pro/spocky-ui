@@ -6,233 +6,198 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <style>
-:root {
-  --bg: #1D1D1B;
-  --bot: #ffffff;
-  --user: #23817A;
-  --text-dark: #1D1D1B;
-  --text-light: #ffffff;
-  --muted: #b0b0b0;
-}
+  * { box-sizing: border-box; }
 
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  background: var(--bg);
-  color: var(--text-light);
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-header {
-  padding: 18px 24px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-}
-
-header h1 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-header span {
-  font-size: 13px;
-  color: var(--muted);
-}
-
-#chat {
-  flex: 1;
-  overflow-y: auto;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.message {
-  max-width: 75%;
-  padding: 14px 18px;
-  border-radius: 16px;
-  line-height: 1.45;
-  white-space: pre-wrap;
-  animation: fadeIn 0.15s ease;
-  font-size: 15px;
-}
-
-/* 👤 Utilisateur */
-.user {
-  align-self: flex-end;
-  background: var(--user);
-  color: var(--text-light);
-  border-bottom-right-radius: 6px;
-}
-
-/* 🤖 Spocky */
-.bot {
-  align-self: flex-start;
-  background: var(--bot);
-  color: var(--text-dark);
-  border-bottom-left-radius: 6px;
-}
-
-.typing {
-  font-size: 13px;
-  color: var(--muted);
-  padding-left: 6px;
-}
-
-footer {
-  padding: 16px;
-  border-top: 1px solid rgba(255,255,255,0.08);
-}
-
-#input-box {
-  display: flex;
-  gap: 12px;
-}
-
-textarea {
-  flex: 1;
-  resize: none;
-  height: 48px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: none;
-  background: #2A2A28;
-  color: var(--text-light);
-  font-size: 14px;
-}
-
-textarea::placeholder {
-  color: #8a8a8a;
-}
-
-textarea:focus {
-  outline: none;
-}
-
-button {
-  background: var(--user);
-  color: white;
-  border: none;
-  padding: 0 22px;
-  border-radius: 12px;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 14px;
-}
-
-button:hover {
-  opacity: 0.9;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
+  body {
+    margin: 0;
+    height: 100vh;
+    font-family: Inter, Arial, sans-serif;
+    background: #1D1D1B;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  /* ===== HEADER ===== */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
   }
-}
+
+  .avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #fff;
+  }
+
+  .header-text h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .header-text span {
+    font-size: 13px;
+    color: #b0b0b0;
+  }
+
+  /* ===== CHAT ===== */
+  .chat {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .bubble {
+    max-width: 70%;
+    padding: 14px 16px;
+    border-radius: 18px;
+    line-height: 1.4;
+    font-size: 15px;
+    white-space: pre-wrap;
+  }
+
+  .bot {
+    background: #ffffff;
+    color: #000000;
+    align-self: flex-start;
+    border-top-left-radius: 6px;
+  }
+
+  .user {
+    background: #23817A;
+    color: #ffffff;
+    align-self: flex-end;
+    border-top-right-radius: 6px;
+  }
+
+  /* ===== INPUT ===== */
+  .input-zone {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+
+  textarea {
+    flex: 1;
+    resize: none;
+    height: 48px;
+    border-radius: 12px;
+    border: none;
+    padding: 12px 14px;
+    font-size: 15px;
+    outline: none;
+  }
+
+  button {
+    background: #23817A;
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 15px;
+    padding: 0 20px;
+    cursor: pointer;
+  }
+
+  button:hover {
+    opacity: 0.9;
+  }
 </style>
 </head>
 
 <body>
 
-<header>
-  <h1>Spocky</h1>
-  <span>Assistant support SPOC</span>
+<!-- HEADER -->
+<header class="header">
+  <img
+    src="https://spoc.pro/wp-content/uploads/2025/04/Spocky.png"
+    alt="Spocky"
+    class="avatar"
+  />
+  <div class="header-text">
+    <h1>Spocky</h1>
+    <span>Assistant support SPOC</span>
+  </div>
 </header>
 
-<div id="chat"></div>
-
-<footer>
-  <div id="input-box">
-    <textarea id="message" placeholder="Écris ton message…"></textarea>
-    <button onclick="sendMessage()">Envoyer</button>
+<!-- CHAT -->
+<div class="chat" id="chat">
+  <div class="bubble bot">
+    Bonjour ! 👋  
+    Comment puis-je vous aider aujourd’hui ?  
+    N’hésitez pas à me décrire votre demande ou le problème rencontré.
   </div>
-</footer>
+</div>
+
+<!-- INPUT -->
+<div class="input-zone">
+  <textarea id="message" placeholder="Écris ton message..."></textarea>
+  <button onclick="sendMessage()">Envoyer</button>
+</div>
 
 <script>
-const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook/spocky/help";
-const SESSION_KEY = "spocky_session_id";
+  const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook-test/spocky/help";
+  const SESSION_KEY = "spocky_session_id";
 
-function getSessionId() {
-  let id = localStorage.getItem(SESSION_KEY);
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem(SESSION_KEY, id);
+  function getSessionId() {
+    let id = localStorage.getItem(SESSION_KEY);
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem(SESSION_KEY, id);
+    }
+    return id;
   }
-  return id;
-}
 
-const chat = document.getElementById("chat");
-
-function addMessage(text, type) {
-  const div = document.createElement("div");
-  div.className = "message " + type;
-  div.textContent = text;
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-}
-
-function showTyping() {
-  const div = document.createElement("div");
-  div.className = "typing";
-  div.id = "typing";
-  div.textContent = "Spocky réfléchit…";
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-}
-
-function hideTyping() {
-  const t = document.getElementById("typing");
-  if (t) t.remove();
-}
-
-async function sendMessage() {
-  const textarea = document.getElementById("message");
-  const text = textarea.value.trim();
-  if (!text) return;
-
-  addMessage(text, "user");
-  textarea.value = "";
-
-  showTyping();
-
-  try {
-    const res = await fetch(WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chatInput: text,
-        sessionId: getSessionId()
-      })
-    });
-
-    const data = await res.json();
-    hideTyping();
-    addMessage(data.message || "Réponse vide", "bot");
-
-  } catch (e) {
-    hideTyping();
-    addMessage("❌ Impossible de contacter Spocky", "bot");
+  function addBubble(text, type) {
+    const chat = document.getElementById("chat");
+    const bubble = document.createElement("div");
+    bubble.className = "bubble " + type;
+    bubble.textContent = text;
+    chat.appendChild(bubble);
+    chat.scrollTop = chat.scrollHeight;
   }
-}
 
-document.getElementById("message").addEventListener("keydown", e => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    sendMessage();
+  async function sendMessage() {
+    const textarea = document.getElementById("message");
+    const message = textarea.value.trim();
+    if (!message) return;
+
+    addBubble(message, "user");
+    textarea.value = "";
+
+    try {
+      const res = await fetch(WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chatInput: message,
+          sessionId: getSessionId()
+        })
+      });
+
+      const data = await res.json();
+      addBubble(data.message || "Réponse vide", "bot");
+
+    } catch (err) {
+      addBubble("❌ Erreur de connexion avec Spocky", "bot");
+    }
   }
-});
+
+  document.getElementById("message").addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
 </script>
 
 </body>
