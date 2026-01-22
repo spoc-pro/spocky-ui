@@ -6,197 +6,211 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <style>
-  * { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #1D1D1B;
+  color: #fff;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
-  body {
-    margin: 0;
-    height: 100vh;
-    font-family: Inter, Arial, sans-serif;
-    background: #1D1D1B;
-    color: #ffffff;
-    display: flex;
-    flex-direction: column;
-  }
+/* ---------- FORM ---------- */
+#user-form {
+  background: #2a2a28;
+  padding: 30px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 380px;
+}
 
-  /* ===== HEADER ===== */
-  .header {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 16px 24px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-  }
+#user-form h2 {
+  margin-top: 0;
+}
 
-  .avatar {
-    width: 42px;
-    height: 42px;
-    object-fit: contain;   /* IMPORTANT : affiche tout le PNG */
-    background: transparent;
-  }
+#user-form input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 6px;
+  border: none;
+}
 
-  .header-text h1 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-  }
+#user-form button {
+  margin-top: 20px;
+  width: 100%;
+  padding: 12px;
+  background: #23817A;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
 
-  .header-text span {
-    font-size: 13px;
-    color: #b0b0b0;
-  }
+/* ---------- CHAT ---------- */
+#chat {
+  display: none;
+  width: 100%;
+  height: 100vh;
+  flex-direction: column;
+}
 
-  /* ===== CHAT ===== */
-  .chat {
-    flex: 1;
-    padding: 24px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
+header {
+  display: flex;
+  align-items: center;
+  padding: 14px;
+  background: #151514;
+  gap: 10px;
+}
 
-  .bubble {
-    max-width: 70%;
-    padding: 14px 16px;
-    border-radius: 18px;
-    line-height: 1.4;
-    font-size: 15px;
-    white-space: pre-wrap;
-  }
+header img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+}
 
-  .bot {
-    background: #ffffff;
-    color: #000000;
-    align-self: flex-start;
-    border-top-left-radius: 6px;
-  }
+.messages {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
 
-  .user {
-    background: #23817A;
-    color: #ffffff;
-    align-self: flex-end;
-    border-top-right-radius: 6px;
-  }
+.bubble {
+  max-width: 70%;
+  padding: 12px 16px;
+  border-radius: 14px;
+  margin-bottom: 10px;
+  white-space: pre-wrap;
+}
 
-  /* ===== INPUT ===== */
-  .input-zone {
-    display: flex;
-    gap: 12px;
-    padding: 16px;
-    border-top: 1px solid rgba(255,255,255,0.08);
-  }
+.user {
+  background: #23817A;
+  margin-left: auto;
+}
 
-  textarea {
-    flex: 1;
-    resize: none;
-    height: 48px;
-    border-radius: 12px;
-    border: none;
-    padding: 12px 14px;
-    font-size: 15px;
-    outline: none;
-  }
+.bot {
+  background: #ffffff;
+  color: #000;
+}
 
-  button {
-    background: #23817A;
-    border: none;
-    border-radius: 12px;
-    color: #fff;
-    font-size: 15px;
-    padding: 0 20px;
-    cursor: pointer;
-  }
+footer {
+  display: flex;
+  padding: 10px;
+  background: #151514;
+}
 
-  button:hover {
-    opacity: 0.9;
-  }
+footer input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+}
+
+footer button {
+  margin-left: 10px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  background: #23817A;
+  color: white;
+}
 </style>
 </head>
 
 <body>
 
-<!-- HEADER -->
-<header class="header">
-  <img
-    src="https://spoc.pro/wp-content/uploads/2025/04/Spocky.png"
-    alt="Spocky"
-    class="avatar"
-  />
-  <div class="header-text">
-    <h1>Spocky</h1>
-    <span>Assistant support SPOC</span>
-  </div>
-</header>
+<!-- ÉCRAN FORMULAIRE -->
+<div id="user-form">
+  <h2>Bienvenue 👋</h2>
+  <p>Avant de commencer, merci de renseigner vos informations.</p>
 
-<!-- CHAT -->
-<div class="chat" id="chat">
-  <div class="bubble bot">
-    Bonjour ! 👋  
-    Comment puis-je vous aider aujourd’hui ?  
-    N’hésitez pas à me décrire votre demande ou le problème rencontré.
-  </div>
+  <input id="prenom" placeholder="Prénom" />
+  <input id="nom" placeholder="Nom" />
+  <input id="email" placeholder="Adresse e-mail" type="email" />
+
+  <button onclick="startChat()">Accéder au chat</button>
 </div>
 
-<!-- INPUT -->
-<div class="input-zone">
-  <textarea id="message" placeholder="Écris ton message..."></textarea>
-  <button onclick="sendMessage()">Envoyer</button>
+<!-- ÉCRAN CHAT -->
+<div id="chat">
+  <header>
+    <img src="https://spoc.pro/wp-content/uploads/2025/04/Spocky.png">
+    <div>
+      <strong>Spocky</strong><br>
+      <small>Assistant support SPOC</small>
+    </div>
+  </header>
+
+  <div class="messages" id="messages"></div>
+
+  <footer>
+    <input id="messageInput" placeholder="Écris ton message..." />
+    <button onclick="sendMessage()">Envoyer</button>
+  </footer>
 </div>
 
 <script>
-  const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook-test/spocky/help";
-  const SESSION_KEY = "spocky_session_id";
+const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook-test/spocky/help";
+const SESSION_KEY = "spocky_session";
 
-  function getSessionId() {
-    let id = localStorage.getItem(SESSION_KEY);
-    if (!id) {
-      id = crypto.randomUUID();
-      localStorage.setItem(SESSION_KEY, id);
-    }
-    return id;
+function getSessionId() {
+  let id = localStorage.getItem(SESSION_KEY);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(SESSION_KEY, id);
+  }
+  return id;
+}
+
+function startChat() {
+  const prenom = document.getElementById("prenom").value.trim();
+  const nom = document.getElementById("nom").value.trim();
+  const email = document.getElementById("email").value.trim();
+
+  if (!prenom || !nom || !email) {
+    alert("Merci de remplir tous les champs");
+    return;
   }
 
-  function addBubble(text, type) {
-    const chat = document.getElementById("chat");
-    const bubble = document.createElement("div");
-    bubble.className = "bubble " + type;
-    bubble.textContent = text;
-    chat.appendChild(bubble);
-    chat.scrollTop = chat.scrollHeight;
-  }
+  localStorage.setItem("spocky_user", JSON.stringify({ prenom, nom, email }));
 
-  async function sendMessage() {
-    const textarea = document.getElementById("message");
-    const message = textarea.value.trim();
-    if (!message) return;
+  document.getElementById("user-form").style.display = "none";
+  document.getElementById("chat").style.display = "flex";
+}
 
-    addBubble(message, "user");
-    textarea.value = "";
+async function sendMessage() {
+  const input = document.getElementById("messageInput");
+  const text = input.value.trim();
+  if (!text) return;
 
-    try {
-      const res = await fetch(WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chatInput: message,
-          sessionId: getSessionId()
-        })
-      });
+  const messages = document.getElementById("messages");
+  const user = JSON.parse(localStorage.getItem("spocky_user"));
 
-      const data = await res.json();
-      addBubble(data.message || "Réponse vide", "bot");
+  messages.innerHTML += `<div class="bubble user">${text}</div>`;
+  input.value = "";
 
-    } catch (err) {
-      addBubble("❌ Erreur de connexion avec Spocky", "bot");
-    }
-  }
-
-  document.getElementById("message").addEventListener("keydown", e => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
+  const res = await fetch(WEBHOOK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chatInput: text,
+      sessionId: getSessionId(),
+      user
+    })
   });
+
+  const data = await res.json();
+  messages.innerHTML += `<div class="bubble bot">${data.message}</div>`;
+  messages.scrollTop = messages.scrollHeight;
+}
+
+// Auto affichage si déjà rempli
+if (localStorage.getItem("spocky_user")) {
+  document.getElementById("user-form").style.display = "none";
+  document.getElementById("chat").style.display = "flex";
+}
 </script>
 
 </body>
