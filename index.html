@@ -1,268 +1,469 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<title>Spocky – Assistant support SPOC</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>Spocky – Assistant support SPOC</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #1D1D1B;
-  color: white;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #1D1D1B;
+      color: white;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
 
-/* ===== AUTH ===== */
-#auth-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.85);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
+    /* ===== AUTH ===== */
+    #auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 18px;
+    }
 
-#auth-box {
-  background: #2a2a28;
-  padding: 32px;
-  border-radius: 16px;
-  width: 360px;
-  text-align: center;
-  animation: fadeInUp 0.6s ease-out;
-}
+    #auth-box {
+      background: #2a2a28;
+      padding: 32px;
+      border-radius: 16px;
+      width: min(380px, 100%);
+      text-align: center;
+      animation: fadeInUp 0.6s ease-out;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+    }
 
-.auth-logo {
-  width: 80px;
-  height: auto;
-  margin-bottom: 16px;
-}
+    .auth-logo {
+      width: 80px;
+      height: auto;
+      margin-bottom: 14px;
+    }
 
-#auth-box input {
-  width: 100%;
-  padding: 12px;
-  margin-top: 12px;
-  border-radius: 8px;
-  border: none;
-  font-size: 15px;
-}
+    #auth-box h2 {
+      margin: 8px 0 8px;
+    }
 
-#auth-box button {
-  width: 100%;
-  margin-top: 20px;
-  padding: 12px;
-  background: #23817A;
-  border: none;
-  border-radius: 8px;
-  color: white;
-  font-size: 15px;
-  cursor: pointer;
-}
+    #auth-box p {
+      margin: 0 0 14px;
+      color: #cfcfcf;
+      line-height: 1.35;
+    }
 
-/* ===== HEADER ===== */
-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 20px;
-  border-bottom: 1px solid #333;
-}
+    #auth-box input {
+      width: 100%;
+      padding: 12px;
+      margin-top: 12px;
+      border-radius: 10px;
+      border: none;
+      font-size: 15px;
+      outline: none;
+      box-sizing: border-box;
+    }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+    #auth-box button {
+      width: 100%;
+      margin-top: 18px;
+      padding: 12px;
+      background: #23817A;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-size: 15px;
+      cursor: pointer;
+    }
 
-.header-left img {
-  width: 42px;
-}
+    #auth-error {
+      margin-top: 10px;
+      color: #ffb4b4;
+      font-size: 13px;
+      min-height: 18px;
+    }
 
-.header-title {
-  font-weight: bold;
-}
+    /* ===== HEADER ===== */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid #333;
+      gap: 12px;
+    }
 
-.badge-user {
-  font-size: 13px;
-  color: #ccc;
-}
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 260px;
+    }
 
-/* ===== CHAT ===== */
-#chat {
-  flex: 1;
-  padding: 20px;
-  overflow-y: auto;
-}
+    .header-left img {
+      width: 44px;
+      height: auto;
+    }
 
-.message {
-  max-width: 70%;
-  padding: 12px 14px;
-  border-radius: 14px;
-  margin-bottom: 12px;
-  line-height: 1.4;
-}
+    .header-title {
+      font-weight: bold;
+      font-size: 16px;
+      line-height: 1.1;
+    }
 
-.bot {
-  background: white;
-  color: black;
-  align-self: flex-start;
-}
+    .header-subtitle {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 2px;
+    }
 
-.user {
-  background: #23817A;
-  color: white;
-  align-self: flex-end;
-  margin-left: auto;
-}
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
 
-/* ===== INPUT ===== */
-footer {
-  padding: 14px;
-  border-top: 1px solid #333;
-  display: flex;
-  gap: 10px;
-}
+    .badge-user {
+      font-size: 13px;
+      color: #cfcfcf;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 7px 10px;
+      border-radius: 999px;
+    }
 
-footer input {
-  flex: 1;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-}
+    .btn-logout {
+      font-size: 13px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.18);
+      color: white;
+      padding: 7px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: 0.15s ease;
+    }
+    .btn-logout:hover {
+      border-color: rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.06);
+    }
 
-footer button {
-  padding: 12px 18px;
-  background: #23817A;
-  border: none;
-  border-radius: 10px;
-  color: white;
-  cursor: pointer;
-}
+    /* ===== CHAT ===== */
+    #chat {
+      flex: 1;
+      padding: 18px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
 
-/* ===== ANIM ===== */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-</style>
+    .message {
+      max-width: 78%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-break: break-word;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.22);
+    }
+
+    /* Spocky (bot) = blanc */
+    .bot {
+      background: #ffffff;
+      color: #111;
+      align-self: flex-start;
+      border-top-left-radius: 6px;
+    }
+
+    /* User = couleur */
+    .user {
+      background: #23817A;
+      color: #ffffff;
+      align-self: flex-end;
+      border-top-right-radius: 6px;
+    }
+
+    .meta {
+      font-size: 11px;
+      color: rgba(255,255,255,0.55);
+      margin-top: 6px;
+    }
+
+    /* ===== INPUT ===== */
+    footer {
+      padding: 14px;
+      border-top: 1px solid #333;
+      display: flex;
+      gap: 10px;
+      background: rgba(0,0,0,0.15);
+    }
+
+    footer input {
+      flex: 1;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color: white;
+      outline: none;
+      font-size: 15px;
+    }
+    footer input::placeholder {
+      color: rgba(255,255,255,0.45);
+    }
+
+    footer button {
+      padding: 12px 18px;
+      background: #23817A;
+      border: none;
+      border-radius: 12px;
+      color: white;
+      cursor: pointer;
+      font-size: 15px;
+      min-width: 110px;
+    }
+
+    footer button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    /* ===== ANIM ===== */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
 
 <body>
 
-<!-- AUTH -->
-<div id="auth-overlay">
-  <div id="auth-box">
-    <img src="https://spoc.pro/wp-content/uploads/2025/04/Spocky.png" class="auth-logo">
-    <h2>Bienvenue 👋</h2>
-    <p>Merci de renseigner vos informations pour accéder au support SPOC.</p>
+  <!-- AUTH -->
+  <div id="auth-overlay">
+    <div id="auth-box">
+      <img src="https://spoc.pro/wp-content/uploads/2025/04/Spocky.png" class="auth-logo" alt="Spocky">
+      <h2>Bienvenue 👋</h2>
+      <p>Merci de renseigner vos informations pour accéder au support SPOC.</p>
 
-    <input id="firstName" placeholder="Prénom">
-    <input id="lastName" placeholder="Nom">
-    <input id="email" placeholder="Adresse e-mail">
+      <input id="firstName" placeholder="Prénom" autocomplete="given-name">
+      <input id="lastName" placeholder="Nom" autocomplete="family-name">
+      <input id="email" placeholder="Adresse e-mail" autocomplete="email">
 
-    <button onclick="login()">Accéder au chat</button>
-  </div>
-</div>
-
-<!-- HEADER -->
-<header>
-  <div class="header-left">
-    <img src="https://spoc.pro/wp-content/uploads/2025/04/Spocky.png">
-    <div>
-      <div class="header-title">Spocky</div>
-      <div style="font-size:12px;color:#aaa;">Assistant support SPOC</div>
+      <button id="loginBtn" onclick="login()">Accéder au chat</button>
+      <div id="auth-error"></div>
     </div>
   </div>
-  <div class="badge-user" id="userBadge"></div>
-</header>
 
-<!-- CHAT -->
-<div id="chat"></div>
+  <!-- HEADER -->
+  <header>
+    <div class="header-left">
+      <img src="https://spoc.pro/wp-content/uploads/2025/04/Spocky.png" alt="Spocky">
+      <div>
+        <div class="header-title">Spocky</div>
+        <div class="header-subtitle">Assistant support SPOC</div>
+      </div>
+    </div>
 
-<!-- INPUT -->
-<footer>
-  <input id="input" placeholder="Écris ton message…">
-  <button onclick="send()">Envoyer</button>
-</footer>
+    <div class="header-right">
+      <div class="badge-user" id="userBadge">Non connecté</div>
+      <button class="btn-logout" id="logoutBtn" onclick="logout()" style="display:none;">Déconnexion</button>
+    </div>
+  </header>
 
-<script>
-const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook/spocky/help";
-const SESSION_KEY = "spocky_session";
+  <!-- CHAT -->
+  <div id="chat"></div>
 
-function getSessionId() {
-  let id = localStorage.getItem(SESSION_KEY);
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem(SESSION_KEY, id);
-  }
-  return id;
-}
+  <!-- INPUT -->
+  <footer>
+    <input id="input" placeholder="Écris ton message…" />
+    <button id="sendBtn" onclick="send()">Envoyer</button>
+  </footer>
 
-function addMessage(text, who) {
-  const div = document.createElement("div");
-  div.className = "message " + who;
-  div.innerHTML = text;
-  document.getElementById("chat").appendChild(div);
-  div.scrollIntoView();
-}
+  <script>
+    // ⚠️ Mets TEST ou PROD selon ton besoin
+    const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook-test/spocky/help";
+    // const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook/spocky/help";
 
-function login() {
-  const f = firstName.value.trim();
-  const l = lastName.value.trim();
-  const e = email.value.trim();
-  if (!f || !l || !e) return alert("Champs manquants");
+    const SESSION_KEY = "spocky_session";
+    const USER_KEY = "spocky_user";
 
-  localStorage.setItem("spocky_user", JSON.stringify({ f, l, e }));
-  document.getElementById("auth-overlay").style.display = "none";
-  document.getElementById("userBadge").innerText = `Connecté en tant que ${f} ${l}`;
+    const authOverlay = document.getElementById("auth-overlay");
+    const userBadge = document.getElementById("userBadge");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const chatEl = document.getElementById("chat");
+    const inputEl = document.getElementById("input");
+    const sendBtn = document.getElementById("sendBtn");
+    const authError = document.getElementById("auth-error");
 
-  addMessage(
-    `Bonjour ${f} 👋<br>
-     Je suis Spocky, assistant support SPOC.<br>
-     Vous pouvez me décrire votre problème ou votre demande.`,
-    "bot"
-  );
-}
+    function safeTrim(v) {
+      return (v || "").toString().trim();
+    }
 
-async function send() {
-  const msg = input.value.trim();
-  if (!msg) return;
+    function getSessionId() {
+      let id = localStorage.getItem(SESSION_KEY);
+      if (!id) {
+        id = (crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + "-" + Math.random().toString(16).slice(2);
+        localStorage.setItem(SESSION_KEY, id);
+      }
+      return id;
+    }
 
-  addMessage(msg, "user");
-  input.value = "";
+    function addMessage(text, who) {
+      const div = document.createElement("div");
+      div.className = "message " + who;
+      div.innerHTML = text; // volontaire (format <br> dans le message Spocky)
+      chatEl.appendChild(div);
+      div.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
 
-  const res = await fetch(WEBHOOK_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chatInput: msg,
-      sessionId: getSessionId()
-    })
-  });
+    function setConnectedUI(user) {
+      const fullName = `${user.f} ${user.l}`.trim();
+      userBadge.innerText = `Connecté en tant que ${fullName}`;
+      logoutBtn.style.display = "inline-flex";
+      authOverlay.style.display = "none";
+      inputEl.disabled = false;
+      sendBtn.disabled = false;
+      inputEl.focus();
+    }
 
-  const data = await res.json();
-  addMessage(data.message || "Réponse vide", "bot");
-}
+    function setDisconnectedUI() {
+      userBadge.innerText = "Non connecté";
+      logoutBtn.style.display = "none";
+      authOverlay.style.display = "flex";
+      inputEl.disabled = true;
+      sendBtn.disabled = true;
+    }
 
-/* Auto-login */
-const user = JSON.parse(localStorage.getItem("spocky_user"));
-if (user) {
-  document.getElementById("auth-overlay").style.display = "none";
-  document.getElementById("userBadge").innerText =
-    `Connecté en tant que ${user.f} ${user.l}`;
+    function login() {
+      authError.textContent = "";
 
-  addMessage(
-    `Bonjour ${user.f} 👋<br>
-     Je suis Spocky, assistant support SPOC.<br>
-     Vous pouvez me décrire votre problème ou votre demande.`,
-    "bot"
-  );
-}
-</script>
+      const f = safeTrim(document.getElementById("firstName").value);
+      const l = safeTrim(document.getElementById("lastName").value);
+      const e = safeTrim(document.getElementById("email").value);
+
+      if (!f || !l || !e) {
+        authError.textContent = "Merci de renseigner Prénom, Nom et e-mail.";
+        return;
+      }
+
+      // Validation email simple
+      if (!/^\S+@\S+\.\S+$/.test(e)) {
+        authError.textContent = "Adresse e-mail invalide.";
+        return;
+      }
+
+      const user = { f, l, e };
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+
+      setConnectedUI(user);
+
+      // Message d'accueil personnalisé
+      addMessage(
+        `Bonjour <b>${f}</b> 👋<br>
+         Je suis <b>Spocky</b>, assistant support SPOC.<br>
+         Vous pouvez me décrire votre <b>problème</b> ou votre <b>demande</b> et je vous aide à avancer.`,
+        "bot"
+      );
+    }
+
+    function logout() {
+      // On enlève seulement l'utilisateur (on garde la session si tu veux garder l’historique côté n8n)
+      localStorage.removeItem(USER_KEY);
+
+      // Option : si tu veux aussi repartir à zéro conversationnellement, décommente :
+      // localStorage.removeItem(SESSION_KEY);
+
+      // UI
+      chatEl.innerHTML = "";
+      setDisconnectedUI();
+
+      // reset champs
+      document.getElementById("firstName").value = "";
+      document.getElementById("lastName").value = "";
+      document.getElementById("email").value = "";
+      authError.textContent = "";
+    }
+
+    async function send() {
+      const msg = safeTrim(inputEl.value);
+      if (!msg) return;
+
+      addMessage(msg, "user");
+      inputEl.value = "";
+
+      // Petit feedback
+      sendBtn.disabled = true;
+
+      try {
+        const res = await fetch(WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chatInput: msg,
+            sessionId: getSessionId()
+          })
+        });
+
+        if (!res.ok) {
+          throw new Error("Erreur HTTP " + res.status);
+        }
+
+        const data = await res.json();
+
+        // Ton n8n renvoie {"message": "..."} (d'après tes derniers tests)
+        addMessage(data.message || "Réponse vide", "bot");
+      } catch (err) {
+        addMessage("❌ Erreur : " + err.message, "bot");
+      } finally {
+        sendBtn.disabled = false;
+        inputEl.focus();
+      }
+    }
+
+    // Entrée pour envoyer
+    inputEl.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        send();
+      }
+    });
+
+    /* Auto-login */
+    (function init() {
+      // désactivé tant qu'on n'est pas connecté
+      inputEl.disabled = true;
+      sendBtn.disabled = true;
+
+      let user = null;
+      try {
+        user = JSON.parse(localStorage.getItem(USER_KEY));
+      } catch (e) {
+        user = null;
+      }
+
+      // Si ancien storage vide / corrompu → nettoie pour éviter "undefined undefined"
+      if (!user || !user.f || !user.l || !user.e) {
+        localStorage.removeItem(USER_KEY);
+        setDisconnectedUI();
+        return;
+      }
+
+      setConnectedUI(user);
+
+      // Message d’accueil uniquement si chat vide
+      if (!chatEl.children.length) {
+        addMessage(
+          `Bonjour <b>${user.f}</b> 👋<br>
+           Je suis <b>Spocky</b>, assistant support SPOC.<br>
+           Vous pouvez me décrire votre <b>problème</b> ou votre <b>demande</b> et je vous aide à avancer.`,
+          "bot"
+        );
+      }
+    })();
+  </script>
 
 </body>
 </html>
