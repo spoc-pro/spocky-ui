@@ -2,40 +2,129 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>SPOCKY – Support SPOC</title>
+  <title>SPOCKY – Assistant support SPOC</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <style>
-    body { font-family: Arial; max-width: 700px; margin: auto; padding: 20px; }
-    textarea { width: 100%; height: 100px; }
-    button { padding: 10px; margin-top: 10px; }
-    pre { background: #f4f4f4; padding: 10px; margin-top: 15px; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
+      margin: 0;
+      padding: 40px;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 120px;
+      padding: 10px;
+      font-size: 16px;
+      resize: vertical;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    #response {
+      margin-top: 20px;
+      padding: 15px;
+      background: #fff;
+      border-radius: 6px;
+      min-height: 60px;
+      white-space: pre-wrap;
+    }
+
+    .loading {
+      opacity: 0.6;
+    }
   </style>
 </head>
+
 <body>
 
-<h1>SPOCKY – Assistant support SPOC</h1>
+  <h1>SPOCKY – Assistant support SPOC</h1>
+  <p>Pose ta question 👇</p>
 
-<textarea id="message" placeholder="Décris ton problème..."></textarea>
-<br />
-<button onclick="envoyer()">Envoyer</button>
+  <textarea id="message" placeholder="Ex : Bonjour, j’ai un problème Outlook..."></textarea>
+  <br />
+  <button onclick="sendMessage()">Envoyer</button>
 
-<pre id="reponse"></pre>
+  <div id="response"></div>
 
-<script>
-async function envoyer() {
-  const res = await fetch("https://spoc-cloud.app.n8n.cloud/webhook/spocky/help", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-spocky-secret": "TEST123"
-    },
-    body: JSON.stringify({
-      conversation_id: "test-001",
-      email: "test@spoc.pro",
-      message: document.getElementById("message").value,
-      etape: "initial"
-    })
-  });
+  <script>
+    // ⚠️ URL DU WEBHOOK n8n (TEST ou PROD)
+    const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook-test/spocky/help";
+    // const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook/spocky/help";
 
-  const data = await res.json();
-  document.getElementById("reponse").textContent =
-    JSON.stringif
+    // sessionId persistant pour la mémoire
+    const SESSION_ID_KEY = "spocky_session_id";
+
+    function getSessionId() {
+      let id = localStorage.getItem(SESSION_ID_KEY);
+      if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem(SESSION_ID_KEY, id);
+      }
+      return id;
+    }
+
+    async function sendMessage() {
+      const textarea = document.getElementById("message");
+      const responseDiv = document.getElementById("response");
+      const message = textarea.value.trim();
+
+      if (!message) return;
+
+      responseDiv.classList.add("loading");
+      responseDiv.textContent = "⏳ SPOCKY réfléchit...";
+
+      try {
+        const res = await fetch(WEBHOOK_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            sessionId: getSessionId(),
+            chatInput: message
+          })
+        });
+
+        if (!res.ok) {
+          throw new Error("Erreur HTTP " + res.status);
+        }
+
+        const data = await res.json();
+
+        // 👉 adapte si besoin selon ta réponse n8n
+        responseDiv.textContent =
+          data?.output ||
+          data?.message ||
+          JSON.stringify(data, null, 2);
+
+        textarea.value = "";
+      } catch (err) {
+        responseDiv.textContent = "❌ Erreur : " + err.message;
+      } finally {
+        responseDiv.classList.remove("loading");
+      }
+    }
+
+    // Envoi avec la touche Entrée (Shift+Enter = nouvelle ligne)
+    document.getElementById("message").addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+  </script>
+
+</body>
+</html>
