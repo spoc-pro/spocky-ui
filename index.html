@@ -251,8 +251,16 @@ async function send() {
 /* Auto-login */
 const user = JSON.parse(localStorage.getItem("spocky_user"));
 if (user) {
-  auth-overlay.style.display = "none";
-  userBadge.innerText = `Connecté en tant que ${user.f} ${user.l}`;
+  document.getElementById("auth-overlay").style.display = "none";
+  document.getElementById("userBadge").innerText =
+    `Connecté en tant que ${user.f} ${user.l}`;
+
+  addMessage(
+    `Bonjour ${user.f} 👋<br>
+     Je suis Spocky, assistant support SPOC.<br>
+     Vous pouvez me décrire votre problème ou votre demande.`,
+    "bot"
+  );
 }
 </script>
 
