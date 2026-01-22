@@ -131,8 +131,8 @@ header {
   font-size: 14px;
 }
 
-.ticket { background: #444; color: white; }
-.ai { background: #23817A; color: white; }
+.ticket { background: #23817A; color: white; }
+.ai { background: #444; color: white; }
 
 /* ===== INPUT ===== */
 footer {
@@ -259,7 +259,7 @@ function login() {
   addMessage(
     `Bonjour <b>${f}</b> 👋<br>
      Je suis <b>Spocky</b>, assistant support SPOC.<br>
-     Vous pouvez me décrire votre problème ou votre demande.`,
+     Comment puis-je vous aider aujourd’hui ?`,
     "bot"
   );
 
@@ -276,6 +276,11 @@ async function send() {
   const msg = input.value.trim();
   if (!msg) return;
 
+  if (!mode) {
+    addMessage("Veuillez d’abord choisir une option ci-dessus.", "bot");
+    return;
+  }
+
   addMessage(msg, "user");
   input.value = "";
 
@@ -284,7 +289,8 @@ async function send() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       chatInput: msg,
-      sessionId: getSessionId()
+      sessionId: getSessionId(),
+      mode: mode
     })
   });
 
