@@ -3,128 +3,90 @@
 <head>
   <meta charset="UTF-8" />
   <title>SPOCKY – Assistant support SPOC</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f5f7fa;
-      margin: 0;
+      background: #f7f9fb;
       padding: 40px;
     }
-
-    h1 {
-      margin-bottom: 10px;
-    }
-
     textarea {
       width: 100%;
       height: 120px;
-      padding: 10px;
       font-size: 16px;
-      resize: vertical;
+      padding: 10px;
     }
-
     button {
       margin-top: 10px;
       padding: 10px 20px;
       font-size: 16px;
       cursor: pointer;
     }
-
-    #response {
+    .response {
       margin-top: 20px;
       padding: 15px;
       background: #fff;
-      border-radius: 6px;
-      min-height: 60px;
-      white-space: pre-wrap;
+      border-radius: 5px;
     }
-
-    .loading {
-      opacity: 0.6;
+    .error {
+      color: red;
+      margin-top: 15px;
     }
   </style>
 </head>
-
 <body>
 
-  <h1>SPOCKY – Assistant support SPOC</h1>
-  <p>Pose ta question 👇</p>
+<h1>SPOCKY – Assistant support SPOC</h1>
+<p>Pose ta question 👇</p>
 
-  <textarea id="message" placeholder="Ex : Bonjour, j’ai un problème Outlook..."></textarea>
-  <br />
-  <button onclick="sendMessage()">Envoyer</button>
+<textarea id="question" placeholder="Ex : Mon Outlook ne démarre plus"></textarea>
+<br>
+<button onclick="sendMessage()">Envoyer</button>
 
-  <div id="response"></div>
+<div id="result" class="response"></div>
+<div id="error" class="error"></div>
 
-  <script>
-    // ⚠️ URL DU WEBHOOK n8n (TEST ou PROD)
-    const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook-test/spocky/help";
-    // const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook/spocky/help";
+<script>
+  const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook/spocky/help";
 
-    // sessionId persistant pour la mémoire
-    const SESSION_ID_KEY = "spocky_session_id";
+  // session persistante navigateur
+  let sessionId = localStorage.getItem("spockySessionId");
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    localStorage.setItem("spockySessionId", sessionId);
+  }
 
-    function getSessionId() {
-      let id = localStorage.getItem(SESSION_ID_KEY);
-      if (!id) {
-        id = crypto.randomUUID();
-        localStorage.setItem(SESSION_ID_KEY, id);
+  async function sendMessage() {
+    const question = document.getElementById("question").value;
+    document.getElementById("error").innerText = "";
+    document.getElementById("result").innerText = "⏳ SPOCKY réfléchit...";
+
+    try {
+      const response = await fetch(WEBHOOK_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          message: question,
+          sessionId: sessionId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("HTTP " + response.status);
       }
-      return id;
+
+      const data = await response.json();
+      document.getElementById("result").innerText = data.message;
+
+    } catch (err) {
+      document.getElementById("result").innerText = "";
+      document.getElementById("error").innerText =
+        "❌ Erreur : impossible de contacter SPOCKY";
+      console.error(err);
     }
-
-    async function sendMessage() {
-      const textarea = document.getElementById("message");
-      const responseDiv = document.getElementById("response");
-      const message = textarea.value.trim();
-
-      if (!message) return;
-
-      responseDiv.classList.add("loading");
-      responseDiv.textContent = "⏳ SPOCKY réfléchit...";
-
-      try {
-        const res = await fetch(WEBHOOK_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            sessionId: getSessionId(),
-            chatInput: message
-          })
-        });
-
-        if (!res.ok) {
-          throw new Error("Erreur HTTP " + res.status);
-        }
-
-        const data = await res.json();
-
-        // 👉 adapte si besoin selon ta réponse n8n
-        responseDiv.textContent =
-          data?.output ||
-          data?.message ||
-          JSON.stringify(data, null, 2);
-
-        textarea.value = "";
-      } catch (err) {
-        responseDiv.textContent = "❌ Erreur : " + err.message;
-      } finally {
-        responseDiv.classList.remove("loading");
-      }
-    }
-
-    // Envoi avec la touche Entrée (Shift+Enter = nouvelle ligne)
-    document.getElementById("message").addEventListener("keydown", function (e) {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
-    });
-  </script>
+  }
+</script>
 
 </body>
 </html>
