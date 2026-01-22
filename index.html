@@ -4,33 +4,11 @@
   <meta charset="UTF-8" />
   <title>SPOCKY – Assistant support SPOC</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f7f9fb;
-      padding: 40px;
-    }
-    textarea {
-      width: 100%;
-      height: 120px;
-      font-size: 16px;
-      padding: 10px;
-    }
-    button {
-      margin-top: 10px;
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    .response {
-      margin-top: 20px;
-      padding: 15px;
-      background: #fff;
-      border-radius: 5px;
-    }
-    .error {
-      color: red;
-      margin-top: 15px;
-    }
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    textarea { width: 100%; height: 120px; }
+    button { margin-top: 10px; padding: 8px 16px; }
+    .error { color: red; margin-top: 10px; }
+    .response { margin-top: 20px; white-space: pre-wrap; }
   </style>
 </head>
 <body>
@@ -38,54 +16,39 @@
 <h1>SPOCKY – Assistant support SPOC</h1>
 <p>Pose ta question 👇</p>
 
-<textarea id="question" placeholder="Ex : Mon Outlook ne démarre plus"></textarea>
-<br>
-<button onclick="sendMessage()">Envoyer</button>
+<textarea id="message" placeholder="Bonjour..."></textarea><br />
+<button onclick="send()">Envoyer</button>
 
-<div id="result" class="response"></div>
-<div id="error" class="error"></div>
+<div class="response" id="response"></div>
+<div class="error" id="error"></div>
 
 <script>
-  const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook/spocky/help";
+async function send() {
+  const message = document.getElementById("message").value;
+  document.getElementById("response").textContent = "";
+  document.getElementById("error").textContent = "";
 
-  // session persistante navigateur
-  let sessionId = localStorage.getItem("spockySessionId");
-  if (!sessionId) {
-    sessionId = crypto.randomUUID();
-    localStorage.setItem("spockySessionId", sessionId);
-  }
-
-  async function sendMessage() {
-    const question = document.getElementById("question").value;
-    document.getElementById("error").innerText = "";
-    document.getElementById("result").innerText = "⏳ SPOCKY réfléchit...";
-
-    try {
-      const response = await fetch(WEBHOOK_URL, {
+  try {
+    const res = await fetch(
+      "https://spoc-cloud.app.n8n.cloud/webhook-test/spocky/help",
+      {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: question,
-          sessionId: sessionId
+          message: message,
+          sessionId: "test-session-1"
         })
-      });
-
-      if (!response.ok) {
-        throw new Error("HTTP " + response.status);
       }
+    );
 
-      const data = await response.json();
-      document.getElementById("result").innerText = data.message;
-
-    } catch (err) {
-      document.getElementById("result").innerText = "";
-      document.getElementById("error").innerText =
-        "❌ Erreur : impossible de contacter SPOCKY";
-      console.error(err);
-    }
+    const data = await res.json();
+    document.getElementById("response").textContent =
+      "SPOCKY : " + (data.message || JSON.stringify(data));
+  } catch (e) {
+    document.getElementById("error").textContent =
+      "❌ Erreur : impossible de contacter SPOCKY";
   }
+}
 </script>
 
 </body>
