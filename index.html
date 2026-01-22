@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>SPOCKY – Support SPOC</title>
+  <style>
+    body { font-family: Arial; max-width: 700px; margin: auto; padding: 20px; }
+    textarea { width: 100%; height: 100px; }
+    button { padding: 10px; margin-top: 10px; }
+    pre { background: #f4f4f4; padding: 10px; margin-top: 15px; }
+  </style>
+</head>
+<body>
+
+<h1>SPOCKY – Assistant support SPOC</h1>
+
+<textarea id="message" placeholder="Décris ton problème..."></textarea>
+<br />
+<button onclick="envoyer()">Envoyer</button>
+
+<pre id="reponse"></pre>
+
+<script>
+async function envoyer() {
+  const res = await fetch("https://spoc-cloud.app.n8n.cloud/webhook/spocky/help", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-spocky-secret": "TEST123"
+    },
+    body: JSON.stringify({
+      conversation_id: "test-001",
+      email: "test@spoc.pro",
+      message: document.getElementById("message").value,
+      etape: "initial"
+    })
+  });
+
+  const data = await res.json();
+  document.getElementById("reponse").textContent =
+    JSON.stringif
