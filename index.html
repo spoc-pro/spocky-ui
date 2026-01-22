@@ -76,6 +76,7 @@ async function sendMessage() {
     });
 
     const data = await res.json();
+    responseDiv.textContent = data.message;
 
     responseDiv.textContent = data.output || "Réponse vide";
   } catch (err) {
