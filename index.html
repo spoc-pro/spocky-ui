@@ -1,87 +1,135 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <title>Spocky – Assistant support SPOC</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8" />
+<title>Spocky – Assistant support SPOC</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f7fa;
-      padding: 40px;
-    }
-    textarea {
-      width: 100%;
-      height: 120px;
-      font-size: 16px;
-      padding: 10px;
-    }
-    button {
-      margin-top: 10px;
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    #response {
-      margin-top: 20px;
-      background: #fff;
-      padding: 15px;
-      border-radius: 6px;
-      white-space: pre-wrap;
-    }
-  </style>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f5f7fa;
+  margin: 0;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+}
+
+#chat {
+  max-width: 800px;
+  margin: auto;
+  background: #fff;
+  border-radius: 8px;
+  padding: 15px;
+  height: 70vh;
+  overflow-y: auto;
+}
+
+.message {
+  margin: 10px 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  max-width: 80%;
+  white-space: pre-wrap;
+}
+
+.user {
+  background: #d9eaff;
+  margin-left: auto;
+}
+
+.bot {
+  background: #eee;
+}
+
+#input-area {
+  max-width: 800px;
+  margin: 10px auto;
+  display: flex;
+  gap: 10px;
+}
+
+textarea {
+  flex: 1;
+  height: 60px;
+  resize: none;
+}
+
+button {
+  padding: 10px 20px;
+  cursor: pointer;
+}
+</style>
 </head>
 
 <body>
-  <h1>Spocky – Assistant support SPOC</h1>
-  <p>Pose ta question 👇</p>
 
-  <textarea id="message"></textarea>
-  <br />
+<h1>Spocky – Assistant support SPOC</h1>
+
+<div id="chat"></div>
+
+<div id="input-area">
+  <textarea id="message" placeholder="Écris ton message..."></textarea>
   <button onclick="sendMessage()">Envoyer</button>
+</div>
 
-  <div id="response"></div>
+<script>
+const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook-test/spocky/help";
+const SESSION_KEY = "spocky_session_id";
 
-  <script>
-    const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook/spocky/help";
-    const SESSION_KEY = "spocky_session";
+function getSessionId() {
+  let id = localStorage.getItem(SESSION_KEY);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(SESSION_KEY, id);
+  }
+  return id;
+}
 
-    function getSessionId() {
-      let id = localStorage.getItem(SESSION_KEY);
-      if (!id) {
-        id = crypto.randomUUID();
-        localStorage.setItem(SESSION_KEY, id);
-      }
-      return id;
-    }
+function addMessage(text, type) {
+  const chat = document.getElementById("chat");
+  const div = document.createElement("div");
+  div.className = "message " + type;
+  div.textContent = text;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
 
-    async function sendMessage() {
-      const msg = document.getElementById("message").value.trim();
-      const responseDiv = document.getElementById("response");
+async function sendMessage() {
+  const textarea = document.getElementById("message");
+  const text = textarea.value.trim();
+  if (!text) return;
 
-      if (!msg) return;
+  addMessage(text, "user");
+  textarea.value = "";
 
-      responseDiv.textContent = "⏳ Spocky réfléchit...";
+  try {
+    const res = await fetch(WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionId: getSessionId(),
+        message: text
+      })
+    });
 
-      try {
-        const res = await fetch(WEBHOOK_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            sessionId: getSessionId(),
-            chatInput: msg
-          })
-        });
+    const data = await res.json();
+    addMessage(data.message || "Réponse vide", "bot");
 
-        const data = await res.json();
-        responseDiv.textContent = data.message || "Réponse vide";
-      } catch (e) {
-        responseDiv.textContent = "❌ Erreur : " + e.message;
-      }
-    }
-  </script>
+  } catch (e) {
+    addMessage("❌ Erreur de connexion avec Spocky", "bot");
+  }
+}
+
+document.getElementById("message").addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+</script>
+
 </body>
 </html>
