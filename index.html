@@ -252,21 +252,15 @@ footer button {
 const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook/spocky/help";
 const SESSION_KEY = "spocky_session";
 let mode = null;
+let queuedPayload = null;
 
-/* ✅ Turnstile state */
-let turnstileToken = null;
-let pendingSendPayload = null;
+async function onTurnstileSuccess(token) {
+  if (!queuedPayload) return;
 
-function onTurnstileSuccess(token) {
-  turnstileToken = token;
+  const { msg, sessionId, mode, thinkingId } = queuedPayload;
+  queuedPayload = null; // 🔥 IMPORTANT
 
-  // Si un envoi était en attente, on le relance automatiquement
-  if (pendingSendPayload) {
-    const p = pendingSendPayload;
-    pendingSendPayload = null;
-    // ✅ CORRECTION MINIMALE : on passe aussi thinkingId
-    sendToWebhook(p.msg, p.sessionId, p.mode, p.thinkingId);
-  }
+  await sendToWebhook(msg, sessionId, mode, token, thinkingId);
 }
 
 function getSessionId() {
@@ -369,7 +363,7 @@ async function send() {
   if (!msg) return;
 
   if (!mode) {
-    addMessage("Veuillez d’abord choisir une option ci-dessus.", "bot");
+    addMessage("Veuillez d’abord choisir une option.", "bot");
     return;
   }
 
@@ -378,62 +372,40 @@ async function send() {
 
   const thinkingId = showThinkingBubble();
 
-  const payload = {
+  queuedPayload = {
     msg,
-    sessionId: getSessionId(),
-    mode
+    sessionId: getSessionId(), // ⚠️ NE JAMAIS changer ça
+    mode,
+    thinkingId
   };
 
-  try {
-    if (!turnstileToken) {
-
-      if (pendingSendPayload) return; // 🔒 PROTECTION CRITIQUE
-
-      pendingSendPayload = payload;
-      pendingSendPayload.thinkingId = thinkingId;
-
-      if (window.turnstile && typeof window.turnstile.execute === "function") {
-        window.turnstile.execute();
-      } else {
-        document.getElementById(thinkingId)?.remove();
-        addMessage("❌ Sécurité : Turnstile non chargé. Réessayez dans quelques secondes.", "bot");
-        pendingSendPayload = null;
-      }
-      return;
-    }
-
-    await sendToWebhook(payload.msg, payload.sessionId, payload.mode, thinkingId);
-
-  } catch (err) {
+  if (window.turnstile && typeof window.turnstile.execute === "function") {
+    window.turnstile.execute(); // 🔐 NOUVEAU challenge à CHAQUE message
+  } else {
     document.getElementById(thinkingId)?.remove();
-    addMessage("❌ Erreur : impossible de contacter Spocky.", "bot");
+    addMessage("❌ Sécurité non chargée.", "bot");
   }
 }
 
-async function sendToWebhook(msg, sessionId, mode, thinkingIdOverride = null) {
-  const thinkingId = thinkingIdOverride || (pendingSendPayload && pendingSendPayload.thinkingId);
-
+async function sendToWebhook(msg, sessionId, mode, token, thinkingId) {
   const res = await fetch(WEBHOOK_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       chatInput: msg,
-      sessionId: sessionId,
-      mode: mode,
-      turnstileToken: turnstileToken
+      sessionId,
+      mode,
+      turnstileToken: token // 🔐 usage unique
     })
   });
 
   const data = await res.json();
 
-  if (thinkingId) document.getElementById(thinkingId)?.remove();
-
-  turnstileToken = null;
-  pendingSendPayload = null; // 🔒 NETTOYAGE CRITIQUE
+  document.getElementById(thinkingId)?.remove();
 
   const botEl = addMessage("", "bot");
-  const answer = (data && (data.message || data.output)) ? (data.message || data.output) : "Réponse vide";
-  await typewriterHTML(botEl, String(answer).replaceAll("\n", "<br>"), 12);
+  const answer = data.message || data.output || "Réponse vide";
+  await typewriterHTML(botEl, answer.replaceAll("\n", "<br>"), 12);
 }
 
 /* Auto-login */
