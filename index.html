@@ -240,27 +240,50 @@ footer button {
   <button onclick="send()">Envoyer</button>
 </footer>
 
-<!-- ✅ Turnstile Invisible (site key fourni) -->
-<div
-  class="cf-turnstile"
-  data-sitekey="0x4AAAAAACObC1d7FKkSkeUv"
-  data-size="invisible"
-  data-callback="onTurnstileSuccess">
-</div>
+<!-- ✅ Turnstile container (au lieu du div cf-turnstile auto) -->
+<div id="turnstile-container"></div>
 
 <script>
 const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook/spocky/help";
 const SESSION_KEY = "spocky_session";
 let mode = null;
+
+/* ✅ Option 2 : 1 message = 1 Turnstile */
 let queuedPayload = null;
+
+/* ✅ Turnstile widget id (obligatoire pour reset/execute en invisible) */
+let turnstileWidgetId = null;
+
+function initTurnstile() {
+  if (turnstileWidgetId) return;
+
+  if (window.turnstile && typeof window.turnstile.render === "function") {
+    turnstileWidgetId = window.turnstile.render("#turnstile-container", {
+      sitekey: "0x4AAAAAACObC1d7FKkSkeUv",
+      size: "invisible",
+      callback: onTurnstileSuccess
+    });
+  } else {
+    // Turnstile chargé async/defer -> on réessaye un peu plus tard
+    setTimeout(initTurnstile, 150);
+  }
+}
+window.addEventListener("load", initTurnstile);
 
 async function onTurnstileSuccess(token) {
   if (!queuedPayload) return;
 
   const { msg, sessionId, mode, thinkingId } = queuedPayload;
-  queuedPayload = null; // 🔥 IMPORTANT
+  queuedPayload = null;
 
-  await sendToWebhook(msg, sessionId, mode, token, thinkingId);
+  try {
+    await sendToWebhook(msg, sessionId, mode, token, thinkingId);
+  } finally {
+    // 🔥 CRITIQUE : reset pour permettre un nouveau token au prochain message
+    if (window.turnstile && turnstileWidgetId !== null) {
+      window.turnstile.reset(turnstileWidgetId);
+    }
+  }
 }
 
 function getSessionId() {
@@ -363,7 +386,13 @@ async function send() {
   if (!msg) return;
 
   if (!mode) {
-    addMessage("Veuillez d’abord choisir une option.", "bot");
+    addMessage("Veuillez d’abord choisir une option ci-dessus.", "bot");
+    return;
+  }
+
+  // 🔒 anti double-clic pendant une requête en vol
+  if (queuedPayload) {
+    addMessage("⏳ Un message est déjà en cours d’envoi. Patientez une seconde 🙂", "bot");
     return;
   }
 
@@ -374,17 +403,21 @@ async function send() {
 
   queuedPayload = {
     msg,
-    sessionId: getSessionId(), // ⚠️ NE JAMAIS changer ça
+    sessionId: getSessionId(),
     mode,
     thinkingId
   };
 
-  if (window.turnstile && typeof window.turnstile.execute === "function") {
-    window.turnstile.execute(); // 🔐 NOUVEAU challenge à CHAQUE message
-  } else {
+  // ⚠️ Turnstile doit être prêt
+  if (!window.turnstile || turnstileWidgetId === null) {
     document.getElementById(thinkingId)?.remove();
-    addMessage("❌ Sécurité non chargée.", "bot");
+    addMessage("❌ Sécurité : Turnstile non prêt. Réessayez dans quelques secondes.", "bot");
+    queuedPayload = null;
+    return;
   }
+
+  // ✅ Option 2 : on exécute à CHAQUE message
+  window.turnstile.execute(turnstileWidgetId);
 }
 
 async function sendToWebhook(msg, sessionId, mode, token, thinkingId) {
@@ -393,19 +426,19 @@ async function sendToWebhook(msg, sessionId, mode, token, thinkingId) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       chatInput: msg,
-      sessionId,
-      mode,
-      turnstileToken: token // 🔐 usage unique
+      sessionId: sessionId,
+      mode: mode,
+      turnstileToken: token
     })
   });
 
   const data = await res.json();
 
-  document.getElementById(thinkingId)?.remove();
+  if (thinkingId) document.getElementById(thinkingId)?.remove();
 
   const botEl = addMessage("", "bot");
-  const answer = data.message || data.output || "Réponse vide";
-  await typewriterHTML(botEl, answer.replaceAll("\n", "<br>"), 12);
+  const answer = (data && (data.message || data.output)) ? (data.message || data.output) : "Réponse vide";
+  await typewriterHTML(botEl, String(answer).replaceAll("\n", "<br>"), 12);
 }
 
 /* Auto-login */
