@@ -176,11 +176,7 @@ footer button {
     <input id="email" placeholder="Adresse e-mail">
 
     <!-- Turnstile widget -->
-    <div
-      class="cf-turnstile"
-      data-sitekey="0x4AAAAAACObC1d7FKkSkeUv"
-      data-callback="onTurnstileSuccess">
-    </div>
+    <div id="turnstile-container"></div>
 
     <button onclick="login()">Accéder au chat</button>
   </div>
@@ -317,6 +313,22 @@ async function send() {
 input.addEventListener("keydown", e => {
   if (e.key === "Enter") send();
 });
+
+
+  let turnstileToken = null;
+
+window.onload = () => {
+  if (window.turnstile) {
+    turnstile.render("#turnstile-container", {
+      sitekey: "0x4AAAAAACObC1d7FKkSkeUv",
+      callback: function (token) {
+        turnstileToken = token;
+        console.log("Turnstile OK:", token);
+      }
+    });
+  }
+};
+  
 </script>
 
 </body>
