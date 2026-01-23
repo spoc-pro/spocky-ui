@@ -5,6 +5,9 @@
 <title>Spocky – Assistant support SPOC</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- ✅ Cloudflare Turnstile -->
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
 <style>
 body {
   margin: 0;
@@ -237,10 +240,33 @@ footer button {
   <button onclick="send()">Envoyer</button>
 </footer>
 
+<!-- ✅ Turnstile Invisible (site key fourni) -->
+<div
+  class="cf-turnstile"
+  data-sitekey="0x4AAAAAACObC1d7FKkSkeUv"
+  data-size="invisible"
+  data-callback="onTurnstileSuccess">
+</div>
+
 <script>
-const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook/spocky/help";
+const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook-test/spocky/help";
 const SESSION_KEY = "spocky_session";
 let mode = null;
+
+/* ✅ Turnstile state */
+let turnstileToken = null;
+let pendingSendPayload = null;
+
+function onTurnstileSuccess(token) {
+  turnstileToken = token;
+
+  // Si un envoi était en attente, on le relance automatiquement
+  if (pendingSendPayload) {
+    const p = pendingSendPayload;
+    pendingSendPayload = null;
+    sendToWebhook(p.msg, p.sessionId, p.mode);
+  }
+}
 
 function getSessionId() {
   let id = localStorage.getItem(SESSION_KEY);
@@ -263,7 +289,6 @@ function addMessage(text, who, id = null) {
 
 /* Effet "lettre par lettre" (supporte <br>) */
 async function typewriterHTML(el, html, speed = 14) {
-  // Convertir <br> en token pour éviter de casser le rendu
   const token = "___BR___";
   const safe = html.replaceAll("<br>", token);
 
@@ -353,31 +378,69 @@ async function send() {
   // ✅ Afficher bulle "Spocky réfléchit..."
   const thinkingId = showThinkingBubble();
 
+  const payload = {
+    msg,
+    sessionId: getSessionId(),
+    mode
+  };
+
   try {
-    const res = await fetch(WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chatInput: msg,
-        sessionId: getSessionId(),
-        mode: mode
-      })
-    });
+    // ✅ Si pas de token Turnstile → on lance Turnstile puis on envoie automatiquement via callback
+    if (!turnstileToken) {
+      pendingSendPayload = payload;
 
-    const data = await res.json();
+      // Important: on garde la bulle "thinking" affichée pendant la vérif
+      // On stocke l'id dans pendingSendPayload pour la retirer au bon moment
+      pendingSendPayload.thinkingId = thinkingId;
 
-    // Supprimer la bulle thinking
-    document.getElementById(thinkingId)?.remove();
+      // Lance l'invisible challenge
+      if (window.turnstile && typeof window.turnstile.execute === "function") {
+        window.turnstile.execute();
+      } else {
+        // Si Turnstile pas encore chargé
+        document.getElementById(thinkingId)?.remove();
+        addMessage("❌ Sécurité : Turnstile non chargé. Réessayez dans quelques secondes.", "bot");
+        pendingSendPayload = null;
+      }
+      return;
+    }
 
-    // ✅ Afficher la réponse en "lettre par lettre"
-    const botEl = addMessage("", "bot");
-    const answer = (data && (data.message || data.output)) ? (data.message || data.output) : "Réponse vide";
-    await typewriterHTML(botEl, String(answer).replaceAll("\n", "<br>"), 12);
+    // Sinon on envoie directement
+    await sendToWebhook(payload.msg, payload.sessionId, payload.mode, thinkingId);
 
   } catch (err) {
     document.getElementById(thinkingId)?.remove();
     addMessage("❌ Erreur : impossible de contacter Spocky.", "bot");
   }
+}
+
+async function sendToWebhook(msg, sessionId, mode, thinkingIdOverride = null) {
+  // Si l'appel vient du callback turnstile, on récupère l'id de bulle thinking stocké
+  const thinkingId = thinkingIdOverride || (pendingSendPayload && pendingSendPayload.thinkingId);
+
+  const res = await fetch(WEBHOOK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chatInput: msg,
+      sessionId: sessionId,
+      mode: mode,
+      turnstileToken: turnstileToken
+    })
+  });
+
+  const data = await res.json();
+
+  // Supprimer la bulle thinking
+  if (thinkingId) document.getElementById(thinkingId)?.remove();
+
+  // ✅ Reset token après usage (un token = un envoi)
+  turnstileToken = null;
+
+  // ✅ Afficher la réponse en "lettre par lettre"
+  const botEl = addMessage("", "bot");
+  const answer = (data && (data.message || data.output)) ? (data.message || data.output) : "Réponse vide";
+  await typewriterHTML(botEl, String(answer).replaceAll("\n", "<br>"), 12);
 }
 
 /* Auto-login */
@@ -393,15 +456,13 @@ if (user) {
   showChoices();
 }
 
-    const inputField = document.getElementById("input");
-
-  inputField.addEventListener("keydown", function (event) {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault(); // empêche le retour à la ligne
-      send(); // appelle ta fonction existante
-    }
-  });
-  
+const inputField = document.getElementById("input");
+inputField.addEventListener("keydown", function (event) {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    send();
+  }
+});
 </script>
 
 </body>
