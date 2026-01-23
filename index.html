@@ -264,7 +264,8 @@ function onTurnstileSuccess(token) {
   if (pendingSendPayload) {
     const p = pendingSendPayload;
     pendingSendPayload = null;
-    sendToWebhook(p.msg, p.sessionId, p.mode);
+    // ✅ CORRECTION MINIMALE : on passe aussi thinkingId
+    sendToWebhook(p.msg, p.sessionId, p.mode, p.thinkingId);
   }
 }
 
@@ -375,7 +376,6 @@ async function send() {
   addMessage(msg, "user");
   input.value = "";
 
-  // ✅ Afficher bulle "Spocky réfléchit..."
   const thinkingId = showThinkingBubble();
 
   const payload = {
@@ -385,19 +385,16 @@ async function send() {
   };
 
   try {
-    // ✅ Si pas de token Turnstile → on lance Turnstile puis on envoie automatiquement via callback
     if (!turnstileToken) {
-      pendingSendPayload = payload;
 
-      // Important: on garde la bulle "thinking" affichée pendant la vérif
-      // On stocke l'id dans pendingSendPayload pour la retirer au bon moment
+      if (pendingSendPayload) return; // 🔒 PROTECTION CRITIQUE
+
+      pendingSendPayload = payload;
       pendingSendPayload.thinkingId = thinkingId;
 
-      // Lance l'invisible challenge
       if (window.turnstile && typeof window.turnstile.execute === "function") {
         window.turnstile.execute();
       } else {
-        // Si Turnstile pas encore chargé
         document.getElementById(thinkingId)?.remove();
         addMessage("❌ Sécurité : Turnstile non chargé. Réessayez dans quelques secondes.", "bot");
         pendingSendPayload = null;
@@ -405,7 +402,6 @@ async function send() {
       return;
     }
 
-    // Sinon on envoie directement
     await sendToWebhook(payload.msg, payload.sessionId, payload.mode, thinkingId);
 
   } catch (err) {
@@ -415,7 +411,6 @@ async function send() {
 }
 
 async function sendToWebhook(msg, sessionId, mode, thinkingIdOverride = null) {
-  // Si l'appel vient du callback turnstile, on récupère l'id de bulle thinking stocké
   const thinkingId = thinkingIdOverride || (pendingSendPayload && pendingSendPayload.thinkingId);
 
   const res = await fetch(WEBHOOK_URL, {
@@ -431,13 +426,11 @@ async function sendToWebhook(msg, sessionId, mode, thinkingIdOverride = null) {
 
   const data = await res.json();
 
-  // Supprimer la bulle thinking
   if (thinkingId) document.getElementById(thinkingId)?.remove();
 
-  // ✅ Reset token après usage (un token = un envoi)
   turnstileToken = null;
+  pendingSendPayload = null; // 🔒 NETTOYAGE CRITIQUE
 
-  // ✅ Afficher la réponse en "lettre par lettre"
   const botEl = addMessage("", "bot");
   const answer = (data && (data.message || data.output)) ? (data.message || data.output) : "Réponse vide";
   await typewriterHTML(botEl, String(answer).replaceAll("\n", "<br>"), 12);
