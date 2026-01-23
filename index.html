@@ -5,9 +5,6 @@
 <title>Spocky – Assistant support SPOC</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Cloudflare Turnstile -->
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-
 <style>
 body {
   margin: 0;
@@ -19,7 +16,7 @@ body {
   flex-direction: column;
 }
 
-/* AUTH */
+/* ===== AUTH ===== */
 #auth-overlay {
   position: fixed;
   inset: 0;
@@ -36,6 +33,7 @@ body {
   border-radius: 16px;
   width: 360px;
   text-align: center;
+  animation: fadeInUp 0.6s ease-out;
 }
 
 .auth-logo {
@@ -64,7 +62,7 @@ body {
   cursor: pointer;
 }
 
-/* HEADER */
+/* ===== HEADER ===== */
 header {
   display: flex;
   justify-content: space-between;
@@ -95,7 +93,7 @@ header {
   font-size: 13px;
 }
 
-/* CHAT */
+/* ===== CHAT ===== */
 #chat {
   flex: 1;
   padding: 20px;
@@ -123,7 +121,7 @@ header {
   align-self: flex-end;
 }
 
-/* BUTTONS */
+/* ===== BUTTONS ===== */
 .choice-btn {
   margin-top: 10px;
   padding: 10px 14px;
@@ -136,7 +134,7 @@ header {
 .ticket { background: #23817A; color: white; }
 .ai { background: #444; color: white; }
 
-/* INPUT */
+/* ===== INPUT ===== */
 footer {
   padding: 14px;
   border-top: 1px solid #333;
@@ -159,6 +157,44 @@ footer button {
   color: white;
   cursor: pointer;
 }
+
+/* ===== ANIM ===== */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== "Spocky réfléchit..." ===== */
+.thinking {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-style: italic;
+  opacity: 0.9;
+}
+
+.dots {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.dots span {
+  width: 6px;
+  height: 6px;
+  background: #111;
+  border-radius: 50%;
+  display: inline-block;
+  animation: bounce 1s infinite ease-in-out;
+  opacity: 0.7;
+}
+
+.dots span:nth-child(2) { animation-delay: 0.15s; }
+.dots span:nth-child(3) { animation-delay: 0.30s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.6; }
+  40% { transform: translateY(-5px); opacity: 1; }
+}
 </style>
 </head>
 
@@ -170,14 +206,9 @@ footer button {
     <img src="https://spoc.pro/wp-content/uploads/2025/04/Spocky.png" class="auth-logo">
     <h2>Bienvenue 👋</h2>
     <p>Merci de renseigner vos informations pour accéder au support SPOC.</p>
-
     <input id="firstName" placeholder="Prénom">
     <input id="lastName" placeholder="Nom">
     <input id="email" placeholder="Adresse e-mail">
-
-    <!-- Turnstile widget -->
-    <div id="turnstile-container"></div>
-
     <button onclick="login()">Accéder au chat</button>
   </div>
 </div>
@@ -209,16 +240,8 @@ footer button {
 <script>
 const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook/spocky/help";
 const SESSION_KEY = "spocky_session";
-
 let mode = null;
-let turnstileToken = null;
 
-/* Turnstile callback */
-function onTurnstileSuccess(token) {
-  turnstileToken = token;
-}
-
-/* Session */
 function getSessionId() {
   let id = localStorage.getItem(SESSION_KEY);
   if (!id) {
@@ -228,16 +251,47 @@ function getSessionId() {
   return id;
 }
 
-/* UI */
-function addMessage(text, who) {
+function addMessage(text, who, id = null) {
   const div = document.createElement("div");
   div.className = "message " + who;
+  if (id) div.id = id;
   div.innerHTML = text;
-  chat.appendChild(div);
-  div.scrollIntoView();
+  document.getElementById("chat").appendChild(div);
+  div.scrollIntoView({ behavior: "smooth" });
+  return div;
 }
 
-/* Choices */
+/* Effet "lettre par lettre" (supporte <br>) */
+async function typewriterHTML(el, html, speed = 14) {
+  // Convertir <br> en token pour éviter de casser le rendu
+  const token = "___BR___";
+  const safe = html.replaceAll("<br>", token);
+
+  el.innerHTML = "";
+  for (let i = 0; i < safe.length; i++) {
+    const ch = safe[i];
+    if (safe.slice(i, i + token.length) === token) {
+      el.innerHTML += "<br>";
+      i += token.length - 1;
+    } else {
+      el.innerHTML += ch;
+    }
+    await new Promise(r => setTimeout(r, speed));
+  }
+}
+
+function showThinkingBubble() {
+  const id = "thinking-" + Date.now();
+  addMessage(
+    `<span class="thinking">Spocky réfléchit
+      <span class="dots"><span></span><span></span><span></span></span>
+     </span>`,
+    "bot",
+    id
+  );
+  return id;
+}
+
 function showChoices() {
   addMessage(`
     <b>Que souhaitez-vous faire ?</b><br><br>
@@ -248,46 +302,56 @@ function showChoices() {
 
 function selectMode(m) {
   mode = m;
-  addMessage(m === "ticket" ? "🧾 Création de ticket sélectionnée." : "🤖 Mode Spocky activé.", "user");
-  addMessage("Je suis à votre écoute 🙂", "bot");
+  if (m === "ticket") {
+    addMessage("🧾 Création de ticket sélectionnée.", "user");
+    addMessage("Merci de décrire votre demande.", "bot");
+  } else {
+    addMessage("🤖 Mode Spocky activé.", "user");
+    addMessage("Je suis à votre écoute 🙂", "bot");
+  }
 }
 
-/* Auth */
 function login() {
-  if (!turnstileToken) {
-    alert("Merci de valider la vérification de sécurité.");
-    return;
-  }
-
   const f = firstName.value.trim();
   const l = lastName.value.trim();
   const e = email.value.trim();
-
-  if (!f || !l || !e) {
-    alert("Champs manquants");
-    return;
-  }
+  if (!f || !l || !e) return alert("Champs manquants");
 
   localStorage.setItem("spocky_user", JSON.stringify({ f, l, e }));
-  auth-overlay.style.display = "none";
-  userBadge.innerText = `Connecté : ${f} ${l}`;
+  document.getElementById("auth-overlay").style.display = "none";
+  document.getElementById("userBadge").innerText = `Connecté : ${f} ${l}`;
 
-  addMessage(`Bonjour <b>${f}</b> 👋<br>Je suis <b>Spocky</b>, assistant support SPOC.`, "bot");
+  addMessage(
+    `Bonjour <b>${f}</b> 👋<br>
+     Je suis <b>Spocky</b>, assistant support SPOC.<br>
+     Comment puis-je vous aider aujourd’hui ?`,
+    "bot"
+  );
+
   showChoices();
 }
 
 function logout() {
-  localStorage.clear();
+  localStorage.removeItem("spocky_user");
+  localStorage.removeItem(SESSION_KEY);
   location.reload();
 }
 
-/* Send */
 async function send() {
+  const input = document.getElementById("input");
   const msg = input.value.trim();
-  if (!msg || !mode) return;
+  if (!msg) return;
+
+  if (!mode) {
+    addMessage("Veuillez d’abord choisir une option ci-dessus.", "bot");
+    return;
+  }
 
   addMessage(msg, "user");
   input.value = "";
+
+  // ✅ Afficher bulle "Spocky réfléchit..."
+  const thinkingId = showThinkingBubble();
 
   try {
     const res = await fetch(WEBHOOK_URL, {
@@ -296,38 +360,47 @@ async function send() {
       body: JSON.stringify({
         chatInput: msg,
         sessionId: getSessionId(),
-        mode: mode,
-        turnstileToken: turnstileToken
+        mode: mode
       })
     });
 
     const data = await res.json();
-    addMessage(data.message || "Réponse vide", "bot");
 
-  } catch {
+    // Supprimer la bulle thinking
+    document.getElementById(thinkingId)?.remove();
+
+    // ✅ Afficher la réponse en "lettre par lettre"
+    const botEl = addMessage("", "bot");
+    const answer = (data && (data.message || data.output)) ? (data.message || data.output) : "Réponse vide";
+    await typewriterHTML(botEl, String(answer).replaceAll("\n", "<br>"), 12);
+
+  } catch (err) {
+    document.getElementById(thinkingId)?.remove();
     addMessage("❌ Erreur : impossible de contacter Spocky.", "bot");
   }
 }
 
-/* Enter = envoyer */
-input.addEventListener("keydown", e => {
-  if (e.key === "Enter") send();
-});
+/* Auto-login */
+const user = JSON.parse(localStorage.getItem("spocky_user"));
+if (user) {
+  document.getElementById("auth-overlay").style.display = "none";
+  document.getElementById("userBadge").innerText = `Connecté : ${user.f} ${user.l}`;
+  addMessage(
+    `Bonjour <b>${user.f}</b> 👋<br>
+     Ravi de vous revoir. Comment puis-je vous aider ?`,
+    "bot"
+  );
+  showChoices();
+}
 
+    const inputField = document.getElementById("input");
 
-  let turnstileToken = null;
-
-window.onload = () => {
-  if (window.turnstile) {
-    turnstile.render("#turnstile-container", {
-      sitekey: "0x4AAAAAACObC1d7FKkSkeUv",
-      callback: function (token) {
-        turnstileToken = token;
-        console.log("Turnstile OK:", token);
-      }
-    });
-  }
-};
+  inputField.addEventListener("keydown", function (event) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault(); // empêche le retour à la ligne
+      send(); // appelle ta fonction existante
+    }
+  });
   
 </script>
 
