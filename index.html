@@ -247,6 +247,7 @@ footer button {
 const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook/spocky/help";
 const SESSION_KEY = "spocky_session";
 let mode = null;
+const MODE_KEY = "spocky_mode";
 
 /* ✅ Option 2 : 1 message = 1 Turnstile */
 let queuedPayload = null;
@@ -454,6 +455,19 @@ if (user) {
   showChoices();
 }
 
+
+// ===== MODE PAR DÉFAUT (ticket) =====
+const MODE_KEY = "spocky_mode";
+
+let savedMode = localStorage.getItem(MODE_KEY);
+
+if (!savedMode) {
+  savedMode = "ticket";
+  localStorage.setItem(MODE_KEY, savedMode);
+}
+
+mode = savedMode;
+
 const inputField = document.getElementById("input");
 inputField.addEventListener("keydown", function (event) {
   if (event.key === "Enter" && !event.shiftKey) {
@@ -461,6 +475,7 @@ inputField.addEventListener("keydown", function (event) {
     send();
   }
 });
+
 </script>
 
 </body>
