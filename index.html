@@ -5,7 +5,7 @@
 <title>Spocky – Assistant support SPOC</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Cloudflare Turnstile (optionnel) -->
+<!-- Cloudflare Turnstile -->
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
 <style>
@@ -36,7 +36,6 @@ body {
   border-radius: 16px;
   width: 360px;
   text-align: center;
-  animation: fadeInUp 0.6s ease-out;
 }
 
 .auth-logo {
@@ -124,7 +123,7 @@ header {
   align-self: flex-end;
 }
 
-/* CHOICES */
+/* BUTTONS */
 .choice-btn {
   margin-top: 10px;
   padding: 10px 14px;
@@ -160,18 +159,12 @@ footer button {
   color: white;
   cursor: pointer;
 }
-
-/* ANIM */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
 </style>
 </head>
 
 <body>
 
-<!-- ================= AUTH ================= -->
+<!-- AUTH -->
 <div id="auth-overlay">
   <div id="auth-box">
     <img src="https://spoc.pro/wp-content/uploads/2025/04/Spocky.png" class="auth-logo">
@@ -182,19 +175,18 @@ footer button {
     <input id="lastName" placeholder="Nom">
     <input id="email" placeholder="Adresse e-mail">
 
-    <!-- Turnstile -->
-    <div id="turnstile-wrapper" style="margin-top:12px;">
-      <div class="cf-turnstile"
-           data-sitekey="VOTRE_SITE_KEY"
-           data-callback="onTurnstileSuccess">
-      </div>
+    <!-- Turnstile widget -->
+    <div
+      class="cf-turnstile"
+      data-sitekey="0x4AAAAAACObC1d7FKkSkeUv"
+      data-callback="onTurnstileSuccess">
     </div>
 
     <button onclick="login()">Accéder au chat</button>
   </div>
 </div>
 
-<!-- ================= HEADER ================= -->
+<!-- HEADER -->
 <header>
   <div class="header-left">
     <img src="https://spoc.pro/wp-content/uploads/2025/04/Spocky.png">
@@ -209,34 +201,28 @@ footer button {
   </div>
 </header>
 
-<!-- ================= CHAT ================= -->
+<!-- CHAT -->
 <div id="chat"></div>
 
-<!-- ================= INPUT ================= -->
+<!-- INPUT -->
 <footer>
-  <input id="input" placeholder="Écris ton message…" onkeydown="if(event.key==='Enter') send()">
+  <input id="input" placeholder="Écris ton message…">
   <button onclick="send()">Envoyer</button>
 </footer>
 
 <script>
-/* ================= CONFIG ================= */
 const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook/spocky/help";
 const SESSION_KEY = "spocky_session";
-const TURNSTILE_ENABLED = false; // ← true en production
 
 let mode = null;
-let turnstileToken = "TEST_BYPASS";
+let turnstileToken = null;
 
-/* ================= TURNSTILE ================= */
+/* Turnstile callback */
 function onTurnstileSuccess(token) {
   turnstileToken = token;
 }
 
-if (!TURNSTILE_ENABLED) {
-  document.getElementById("turnstile-wrapper").style.display = "none";
-}
-
-/* ================= UTILS ================= */
+/* Session */
 function getSessionId() {
   let id = localStorage.getItem(SESSION_KEY);
   if (!id) {
@@ -246,51 +232,16 @@ function getSessionId() {
   return id;
 }
 
+/* UI */
 function addMessage(text, who) {
   const div = document.createElement("div");
   div.className = "message " + who;
   div.innerHTML = text;
-  document.getElementById("chat").appendChild(div);
+  chat.appendChild(div);
   div.scrollIntoView();
 }
 
-/* ================= LOGIN ================= */
-function login() {
-  const f = firstName.value.trim();
-  const l = lastName.value.trim();
-  const e = email.value.trim();
-
-  if (!f || !l || !e) {
-    alert("Champs manquants");
-    return;
-  }
-
-  if (TURNSTILE_ENABLED && !turnstileToken) {
-    alert("Merci de valider la vérification de sécurité.");
-    return;
-  }
-
-  localStorage.setItem("spocky_user", JSON.stringify({ f, l, e }));
-  document.getElementById("auth-overlay").style.display = "none";
-  document.getElementById("userBadge").innerText = `Connecté : ${f} ${l}`;
-
-  addMessage(
-    `Bonjour <b>${f}</b> 👋<br>
-     Je suis <b>Spocky</b>, assistant support SPOC.<br>
-     Comment puis-je vous aider aujourd’hui ?`,
-    "bot"
-  );
-
-  showChoices();
-}
-
-/* ================= LOGOUT ================= */
-function logout() {
-  localStorage.clear();
-  location.reload();
-}
-
-/* ================= MODE ================= */
+/* Choices */
 function showChoices() {
   addMessage(`
     <b>Que souhaitez-vous faire ?</b><br><br>
@@ -301,23 +252,43 @@ function showChoices() {
 
 function selectMode(m) {
   mode = m;
-  addMessage(m === "ticket"
-    ? "🧾 Création de ticket sélectionnée."
-    : "🤖 Mode Spocky activé.",
-    "user"
-  );
+  addMessage(m === "ticket" ? "🧾 Création de ticket sélectionnée." : "🤖 Mode Spocky activé.", "user");
   addMessage("Je suis à votre écoute 🙂", "bot");
 }
 
-/* ================= SEND ================= */
-async function send() {
-  const msg = input.value.trim();
-  if (!msg) return;
-
-  if (!mode) {
-    addMessage("Veuillez d’abord choisir une option ci-dessus.", "bot");
+/* Auth */
+function login() {
+  if (!turnstileToken) {
+    alert("Merci de valider la vérification de sécurité.");
     return;
   }
+
+  const f = firstName.value.trim();
+  const l = lastName.value.trim();
+  const e = email.value.trim();
+
+  if (!f || !l || !e) {
+    alert("Champs manquants");
+    return;
+  }
+
+  localStorage.setItem("spocky_user", JSON.stringify({ f, l, e }));
+  auth-overlay.style.display = "none";
+  userBadge.innerText = `Connecté : ${f} ${l}`;
+
+  addMessage(`Bonjour <b>${f}</b> 👋<br>Je suis <b>Spocky</b>, assistant support SPOC.`, "bot");
+  showChoices();
+}
+
+function logout() {
+  localStorage.clear();
+  location.reload();
+}
+
+/* Send */
+async function send() {
+  const msg = input.value.trim();
+  if (!msg || !mode) return;
 
   addMessage(msg, "user");
   input.value = "";
@@ -336,23 +307,16 @@ async function send() {
 
     const data = await res.json();
     addMessage(data.message || "Réponse vide", "bot");
+
   } catch {
     addMessage("❌ Erreur : impossible de contacter Spocky.", "bot");
   }
 }
 
-/* ================= AUTO LOGIN ================= */
-const user = JSON.parse(localStorage.getItem("spocky_user"));
-if (user) {
-  document.getElementById("auth-overlay").style.display = "none";
-  document.getElementById("userBadge").innerText = `Connecté : ${user.f} ${user.l}`;
-  addMessage(
-    `Bonjour <b>${user.f}</b> 👋<br>
-     Ravi de vous revoir. Comment puis-je vous aider ?`,
-    "bot"
-  );
-  showChoices();
-}
+/* Enter = envoyer */
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter") send();
+});
 </script>
 
 </body>
