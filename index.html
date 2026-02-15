@@ -5,7 +5,7 @@
 <title>Spocky – Assistant support SPOC</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Cloudflare Turnstile -->
+<!-- ✅ Cloudflare Turnstile -->
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
 <style>
@@ -66,7 +66,6 @@ body {
   cursor: pointer;
 }
 
-/* RGPD */
 .rgpd {
   margin-top: 14px;
   text-align: left;
@@ -89,7 +88,7 @@ body {
   color: #9fe7e0;
 }
 
-/* HEADER */
+/* ===== HEADER ===== */
 header {
   display: flex;
   justify-content: space-between;
@@ -120,7 +119,7 @@ header {
   font-size: 13px;
 }
 
-/* CHAT */
+/* ===== CHAT ===== */
 #chat {
   flex: 1;
   padding: 20px;
@@ -140,7 +139,7 @@ header {
 .bot { background: white; color: black; }
 .user { background: #23817A; color: white; align-self: flex-end; }
 
-/* INPUT */
+/* ===== INPUT ===== */
 footer {
   padding: 14px;
   border-top: 1px solid #333;
@@ -164,7 +163,7 @@ footer button {
   cursor: pointer;
 }
 
-/* Animations */
+/* ===== ANIM ===== */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
@@ -175,7 +174,6 @@ footer button {
   align-items: center;
   gap: 8px;
   font-style: italic;
-  opacity: 0.9;
 }
 .dots span {
   width: 6px;
@@ -194,7 +192,7 @@ footer button {
 
 <body>
 
-<!-- AUTH -->
+<!-- ===== AUTH ===== -->
 <div id="auth-overlay">
   <div id="auth-box">
     <img src="https://spoc.pro/wp-content/uploads/2025/04/Spocky.png" class="auth-logo">
@@ -211,7 +209,10 @@ footer button {
         <input type="checkbox" id="rgpdConsent" required>
         <span>
           J’accepte que SPOC traite mes données personnelles afin de répondre à ma demande,
-          conformément à la <a href="https://spoc.pro/politique-de-confidentialite" target="_blank">politique de confidentialité</a>.
+          conformément à la 
+          <a href="https://spoc.pro/politique-de-confidentialite" target="_blank">
+            politique de confidentialité
+          </a>.
         </span>
       </label>
     </div>
@@ -220,7 +221,7 @@ footer button {
   </div>
 </div>
 
-<!-- HEADER -->
+<!-- ===== HEADER ===== -->
 <header>
   <div class="header-left">
     <img src="https://spoc.pro/wp-content/uploads/2025/04/Spocky.png">
@@ -251,8 +252,7 @@ let mode = null;
 let queuedPayload = null;
 let turnstileWidgetId = null;
 
-/* ================= LOGIN ================= */
-
+/* ===== LOGIN ===== */
 function login() {
   const f = firstName.value.trim();
   const l = lastName.value.trim();
@@ -269,11 +269,7 @@ function login() {
   const phoneRegex = /^[0-9+ ]{8,15}$/;
   if (!phoneRegex.test(p)) return alert("Numéro de téléphone invalide.");
 
-  localStorage.setItem("spocky_user", JSON.stringify({
-    f, l, e, p,
-    consent: true,
-    consentAt: new Date().toISOString()
-  }));
+  localStorage.setItem("spocky_user", JSON.stringify({ f, l, e, p }));
 
   document.getElementById("auth-overlay").style.display = "none";
   document.getElementById("userBadge").innerText = `Connecté : ${f} ${l}`;
@@ -288,8 +284,7 @@ function login() {
   showChoices();
 }
 
-/* ================= AUTO LOGIN ================= */
-
+/* ===== AUTO LOGIN ===== */
 const user = JSON.parse(localStorage.getItem("spocky_user"));
 if (user) {
   document.getElementById("auth-overlay").style.display = "none";
