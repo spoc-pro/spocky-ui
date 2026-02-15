@@ -35,15 +35,12 @@ body {
   padding: 32px;
   border-radius: 16px;
   width: 360px;
+  max-width: 95%;
   text-align: center;
-  animation: fadeInUp 0.6s ease-out;
   box-sizing: border-box;
 }
 
-.auth-logo {
-  width: 90px;
-  margin-bottom: 16px;
-}
+.auth-logo { width: 90px; margin-bottom: 16px; }
 
 #auth-box input {
   width: 100%;
@@ -63,22 +60,10 @@ body {
   border: none;
   border-radius: 8px;
   color: white;
-  font-size: 15px;
   cursor: pointer;
 }
 
-/* ===== RGPD RESPONSIVE SAFE ===== */
-
-#auth-box {
-  background: #2a2a28;
-  padding: 32px;
-  border-radius: 16px;
-  width: 360px;
-  max-width: 95%;
-  text-align: center;
-  animation: fadeInUp 0.6s ease-out;
-  box-sizing: border-box;
-}
+/* RGPD */
 
 .rgpd {
   margin-top: 16px;
@@ -86,27 +71,13 @@ body {
   font-size: 13px;
   color: #ccc;
   line-height: 1.5;
-  width: 100%;
 }
 
-.rgpd label {
-  display: block;   /* 👈 on supprime le flex */
-}
+.rgpd label { display: block; }
 
-.rgpd input[type="checkbox"] {
-  margin-right: 8px;
-  transform: scale(1.1);
-}
+.rgpd input { margin-right: 8px; }
 
-.rgpd span {
-  display: inline;
-  white-space: normal;
-  word-wrap: break-word;
-}
-
-.rgpd a {
-  color: #9fe7e0;
-}
+.rgpd a { color: #9fe7e0; }
 
 /* ================= HEADER ================= */
 
@@ -191,30 +162,23 @@ footer button {
   cursor: pointer;
 }
 
-/* ===== MOBILE FIX ===== */
+/* Loader */
 
-@media (max-width: 480px) {
-  #auth-box {
-    width: 92%;
-    padding: 24px;
-  }
-
-  #auth-box input {
-    font-size: 16px;
-  }
+.thinking {
+  font-style: italic;
+  opacity: 0.8;
 }
 
-/* ===== ANIMATION ===== */
-
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+@media (max-width: 480px) {
+  #auth-box { width: 94%; padding: 24px; }
+  #auth-box input { font-size: 16px; }
 }
 </style>
 </head>
 
 <body>
 
+<!-- AUTH -->
 <div id="auth-overlay">
   <div id="auth-box">
     <img src="https://spoc.pro/wp-content/uploads/2025/04/Spocky.png" class="auth-logo">
@@ -229,13 +193,10 @@ footer button {
     <div class="rgpd">
       <label>
         <input type="checkbox" id="rgpdConsent" required>
-        <span>
-          J’accepte que SPOC traite mes données personnelles afin de répondre à ma demande,
-          conformément à la
-          <a href="https://spoc.pro/politique-de-confidentialite" target="_blank">
-            politique de confidentialité
-          </a>.
-        </span>
+        J’accepte que SPOC traite mes données personnelles conformément à la
+        <a href="https://spoc.pro/politique-de-confidentialite" target="_blank">
+          politique de confidentialité
+        </a>.
       </label>
     </div>
 
@@ -264,19 +225,27 @@ footer button {
   <button onclick="send()">Envoyer</button>
 </footer>
 
+<div id="turnstile-container"></div>
+
 <script>
+const WEBHOOK_URL = "https://spoc-cloud.app.n8n.cloud/webhook/spocky/help";
+let queuedPayload = null;
+let turnstileWidgetId = null;
+let mode = null;
+
+/* ===== LOGIN ===== */
+
 function login() {
   const f = firstName.value.trim();
   const l = lastName.value.trim();
   const e = email.value.trim();
   const p = phone.value.trim();
-  const consent = document.getElementById("rgpdConsent").checked;
+  const consent = rgpdConsent.checked;
 
   if (!f || !l || !e || !p) return alert("Tous les champs sont obligatoires.");
   if (!consent) return alert("Veuillez accepter la politique de confidentialité.");
 
   localStorage.setItem("spocky_user", JSON.stringify({ f, l, e, p }));
-
   document.getElementById("auth-overlay").style.display = "none";
   document.getElementById("userBadge").innerText = `Connecté : ${f} ${l} (${p})`;
 
@@ -284,10 +253,14 @@ function login() {
   showChoices();
 }
 
+/* ===== LOGOUT ===== */
+
 function logout() {
   localStorage.removeItem("spocky_user");
   location.reload();
 }
+
+/* ===== CHAT ===== */
 
 function addMessage(text, who) {
   const div = document.createElement("div");
@@ -295,6 +268,7 @@ function addMessage(text, who) {
   div.innerHTML = text;
   document.getElementById("chat").appendChild(div);
   div.scrollIntoView({ behavior: "smooth" });
+  return div;
 }
 
 function showChoices() {
@@ -306,20 +280,50 @@ function showChoices() {
 }
 
 function selectMode(m) {
-  if (m === "ticket") {
-    addMessage("🧾 Création de ticket sélectionnée.", "user");
-    addMessage("Merci de décrire votre demande.", "bot");
-  } else {
-    addMessage("🤖 Mode Spocky activé.", "user");
-    addMessage("Je suis à votre écoute 🙂", "bot");
-  }
+  mode = m;
+  addMessage(m === "ticket" ? "🧾 Création de ticket sélectionnée." : "🤖 Mode Spocky activé.", "user");
+  addMessage("Merci de décrire votre demande.", "bot");
 }
+
+function showThinking() {
+  return addMessage(`<span class="thinking">Spocky réfléchit...</span>`, "bot");
+}
+
+/* ===== SEND ===== */
+
+function send() {
+  const input = document.getElementById("input");
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  addMessage(msg, "user");
+  input.value = "";
+
+  const thinking = showThinking();
+
+  fetch(WEBHOOK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: msg })
+  })
+  .then(res => res.json())
+  .then(data => {
+    thinking.remove();
+    addMessage(data.message || "Réponse vide", "bot");
+  })
+  .catch(() => {
+    thinking.remove();
+    addMessage("Erreur serveur.", "bot");
+  });
+}
+
+/* ===== AUTO LOGIN ===== */
 
 const user = JSON.parse(localStorage.getItem("spocky_user"));
 if (user) {
   document.getElementById("auth-overlay").style.display = "none";
   document.getElementById("userBadge").innerText = `Connecté : ${user.f} ${user.l} (${user.p})`;
-  addMessage(`Bonjour <b>${user.f}</b> 👋<br>Ravi de vous revoir.`, "bot");
+  addMessage(`Bonjour <b>${user.f}</b> 👋`, "bot");
   showChoices();
 }
 </script>
