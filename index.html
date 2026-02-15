@@ -69,32 +69,39 @@ body {
 
 /* ===== RGPD RESPONSIVE SAFE ===== */
 
+#auth-box {
+  background: #2a2a28;
+  padding: 32px;
+  border-radius: 16px;
+  width: 360px;
+  max-width: 95%;
+  text-align: center;
+  animation: fadeInUp 0.6s ease-out;
+  box-sizing: border-box;
+}
+
 .rgpd {
-  margin-top: 14px;
+  margin-top: 16px;
   text-align: left;
-  font-size: 12px;
+  font-size: 13px;
   color: #ccc;
   line-height: 1.5;
+  width: 100%;
 }
 
 .rgpd label {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  width: 100%;
-  cursor: pointer;
+  display: block;   /* 👈 on supprime le flex */
 }
 
 .rgpd input[type="checkbox"] {
-  flex-shrink: 0;
-  margin-top: 4px;
-  width: 18px;
-  height: 18px;
+  margin-right: 8px;
+  transform: scale(1.1);
 }
 
 .rgpd span {
-  flex: 1;
-  word-break: break-word;
+  display: inline;
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 .rgpd a {
