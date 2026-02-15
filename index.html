@@ -35,8 +35,10 @@ body {
   padding: 32px;
   border-radius: 16px;
   width: 360px;
+  max-width: 95%;            /* 👈 évite débordement mobile */
   text-align: center;
   animation: fadeInUp 0.6s ease-out;
+  box-sizing: border-box;    /* 👈 important */
 }
 
 .auth-logo {
@@ -66,21 +68,47 @@ body {
   cursor: pointer;
 }
 
-/* RGPD */
+/* ===== RGPD FIX MOBILE ===== */
 .rgpd {
   margin-top: 14px;
   text-align: left;
   font-size: 12px;
   color: #ccc;
-  line-height: 1.4;
+  line-height: 1.5;
+  width: 100%;
 }
+
 .rgpd label {
-  display: flex;
-  gap: 8px;
+  display: block;            /* 👈 on enlève le flex */
   cursor: pointer;
 }
-.rgpd input { margin-top: 3px; }
-.rgpd a { color: #9fe7e0; }
+
+.rgpd input[type="checkbox"] {
+  margin-right: 8px;
+  vertical-align: top;
+}
+
+.rgpd span {
+  display: inline;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.rgpd a {
+  color: #9fe7e0;
+}
+
+/* Petit ajustement mobile */
+@media (max-width: 480px) {
+  #auth-box {
+    width: 94%;
+    padding: 24px;
+  }
+
+  #auth-box input {
+    font-size: 16px; /* évite zoom Safari */
+  }
+}
 
 /* ===== HEADER ===== */
 header {
